@@ -11,8 +11,11 @@ let smallAsteroids = [];
 let difficulty = 20;
 let asteroids = [];
 let asteroidCount = 0;
+let score = 0;
+let font;
 
 function preload() {
+    font = loadFont('./Slim-Thirteen-Pixel-Fonts.ttf');
     largeAsteroidSheet = loadImage("./Large-Rocks.png");
     medAsteroidSheet = loadImage("./Medium-Rocks.png");
     smallAsteroidSheet = loadImage("./Small-Rocks.png");
@@ -61,6 +64,7 @@ function draw(){
     moveBullet();
     moveAsteroids();
     updatePlayer(degree);
+    loadScore();
     let rand = Math.floor(Math.random() * 25);
     if(rand == 1 && asteroidCount < difficulty){
         addAsteroid();
@@ -227,15 +231,18 @@ function initAsteroid(tier = Math.floor(Math.random()* 3) + 1){
         size: 150,
         imgSize: 200,
         tier: tier,
-        img: largeAsteroids[Math.floor(Math.random()*7)]
+        img: largeAsteroids[Math.floor(Math.random()*7)],
+        pts: 50
     }
     if(asteroid.tier == 1){
         asteroid.imgSize = 50;
         asteroid.size = 37;
+        asteroid.pts = 200;
         asteroid.img = smallAsteroids[Math.floor(Math.random()*7)];
     } else if(asteroid.tier == 2){
         asteroid.imgSize = 100;
         asteroid.size = 75;
+        asteroid.pts = 100;
         asteroid.img = medAsteroids[Math.floor(Math.random()*7)];
     }else{
         asteroid.img = largeAsteroids[Math.floor(Math.random()*7)];
@@ -343,8 +350,17 @@ if(asteroidToSplit.tier != 1){
         splitAsteroid2.yv = Math.abs(splitAsteroid2.yv);
     }
 }
-
+    score += asteroidToSplit.pts;
     asteroidCount--;
     asteroids.splice(asteroids.indexOf(asteroidToSplit), 1);
 
+}
+
+
+function loadScore(){
+    fill('white');
+    textFont(font);
+    textSize(50)
+
+    text(`Score: ${score}`, 20, 40);
 }
