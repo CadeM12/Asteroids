@@ -13,6 +13,15 @@ let asteroids = [];
 let asteroidCount = 0;
 let score = 0;
 let font;
+let start = true;
+let playing = false;
+let hit = false;
+let gameOn = true;
+let doAsteroids = true;
+let doPlayer = true;
+let livesAdded = 1;
+let lives = 3;
+
 
 function preload() {
     font = loadFont('./Slim-Thirteen-Pixel-Fonts.ttf');
@@ -24,7 +33,7 @@ function preload() {
 function setup(){
     //angleMode(DEGREES)
     imageMode(CENTER);
-    createCanvas(windowWidth, windowHeight);
+    createCanvas(windowWidth-20, windowHeight-20);
     player = {
         x: width / 2,
         y: height / 2,
@@ -44,33 +53,83 @@ function setup(){
         medAsteroids.push(medAsteroidSheet.get(i*500, 0, 500, 500));
         smallAsteroids.push(smallAsteroidSheet.get(i*250, 0, 250, 250));
     }
+    
+}
 
-   //triangle(width/2 - 20, height/2, width/2 + 20, height/2, width/2, height/2 - 50);
-   //fill('black');
-   //triangle(width/2 - 15, height/2, width/2 + 15, height/2, width/2, height/2 - 40);
-   //fill('white');
-   //triangle(width/2 - 20, height/2, width/2 + 20, height/2, width/2, height/2 - 20);
-   //fill('black');
-   //triangle(width/2 - 15, height/2, width/2 + 15, height/2, width/2, height/2 - 15);
-
+function drawLife(lifeNumber) {
+    let rightVal = lifeNumber*60;
+    fill('white')
+    triangle(50 + rightVal, height - 50, 100 + rightVal, height - 50, 75 + rightVal, height - 100);
+    fill('black');
+    triangle(50 + rightVal, height - 40, 100 + rightVal, height - 40, 75 + rightVal, height - 90);
+    fill('white');
+    triangle(50 + rightVal, height - 50, 100 + rightVal, height - 50, 75 + rightVal, height - 70);
+    fill('black');
+    triangle(45 + rightVal, height - 40, 105 + rightVal, height - 40, 75 + rightVal, height - 63);
 }
 
 function draw(){
     frameCount++;
     let degree = player.rotation * (Math.PI / 180);
-    findMovement(degree);
-    movePlayer();
     background('black');
-    moveBullet();
+    if(!playing && start){
+        textFont(font);
+        textSize(100);
+        fill('white');
+        text('ASTEROIDS', width/2 - 275, height/2 - 50);
+        textSize(30);
+        text('Press SPACE to start', width/2 -125, height/2);
+        if(keyIsDown(32)){
+            playing = true;
+            start = false;
+        }
+    }
     moveAsteroids();
-    updatePlayer(degree);
-    loadScore();
+    if(playing){
+        moveBullet();
+        loadScore();
+        if(doPlayer){
+            if(!hit){
+                findMovement(degree);
+            }
+            movePlayer();
+            updatePlayer(degree);
+        }
+        for(let i = 0; i<lives; i++){
+            drawLife(i);
+        }
+    }
+
     let rand = Math.floor(Math.random() * 25);
     if(rand == 1 && asteroidCount < difficulty){
         addAsteroid();
     };
 
-
+    if(!gameOn){
+        textFont(font);
+        textSize(100);
+        fill('white');
+        text('GAME OVER', width/2 - 275, height/2 - 50);
+        textSize(30);
+        text(`Your score is ${score}!`, width/2 -125, height/2);
+        text('Press SPACE to restart', width/2 -125, height/2 + 40);
+        if(keyIsDown(32)){
+            lives = 3;
+            score = 0;
+            bullets = [];
+            asteroids = [];
+            player.x = width /2;
+            player.y = height / 2;
+            player.rotation = 0;
+            doPlayer = true;
+            hit = false;
+            playing = true;
+            doAsteroids = true;
+            asteroidCount = 0;
+            livesAdded = 1;
+            gameOn = true;
+        }
+    }
     //console.log(player.rotation);
 }
 
@@ -79,8 +138,8 @@ function updatePlayer(degree) {
     strokeWeight(0);
     fill('white');
     push();
-    translate(player.x, player.y)
-    rotate(degree)
+    translate(player.x, player.y);
+    rotate(degree);
     triangle(
         player.tx1,
         player.ty1,
@@ -165,15 +224,25 @@ function findMovement(degree) {
 }
 //MOVE PLAYER
 function movePlayer(){
-    if(player.y > height - 40 || player.y < 40){
-        player.yv *= -1
+    if(player.y > height -25 || player.y < 25){
+        if(player.yv < 0){
+            player.yv -= 1;
+        } else if(player.yv > 0){
+            player.yv += 1;
+        };
+        player.yv *= -1;
     };
-    if(player.x > width - 40 || player.x < 40){
-        player.xv *= -1
+    if(player.x > width -25 || player.x < 25){
+        if(player.xv < 0){
+            player.xv -= 1;
+        } else if(player.xv > 0){
+            player.xv += 1;
+        };
+        player.xv *= -1;
     };
     player.x += player.xv;
     player.y += player.yv;
-    if(player.yv != 0 || player.xv != 0){
+    if(!keyIsDown() && (player.yv != 0 || player.xv != 0)){
         if(player.yv > 0){
             player.yv -= 0.25;
         } else if(player.yv < 0){
@@ -185,19 +254,29 @@ function movePlayer(){
             player.xv += 0.25;
         };
     };
+
+    if(checkCollisions(player) && !hit){
+        if(lives == 0){
+            die();
+        } else {
+            loseLife();
+        }
+    }
 }
 //CREATE BULLET
 function mousePressed() {
-    let bullet = {
-        x: player.x,
-        y: player.y,
-        size: 5,
-        rotation: player.rotation,
-        xv: 20*(Math.cos((player.rotation - 90)*(Math.PI / 180))),
-        yv: 20*(Math.sin((player.rotation - 90)*(Math.PI / 180)))
-    }
+    if(playing && doAsteroids){
+        let bullet = {
+            x: player.x,
+            y: player.y,
+            size: 5,
+            rotation: player.rotation,
+            xv: 20*(Math.cos((player.rotation - 90)*(Math.PI / 180))),
+            yv: 20*(Math.sin((player.rotation - 90)*(Math.PI / 180)))
+        }
 
-    bullets.push(bullet);
+        bullets.push(bullet);
+    }
 }
 
 //Move Bullet
@@ -226,13 +305,15 @@ function initAsteroid(tier = Math.floor(Math.random()* 3) + 1){
     let asteroid = {
         x: 0,
         y: 0,
-        xv: Math.floor(Math.random()* 10) + 1,
-        yv: Math.floor(Math.random()* 10) + 1,
+        xv: Math.floor(Math.random()* 7) + 1,
+        yv: Math.floor(Math.random()* 7) + 1,
         size: 150,
         imgSize: 200,
         tier: tier,
         img: largeAsteroids[Math.floor(Math.random()*7)],
-        pts: 50
+        pts: 50,
+        rotationv: Math.floor(Math.random() * 7),
+        rotation: 0
     }
     if(asteroid.tier == 1){
         asteroid.imgSize = 50;
@@ -292,16 +373,26 @@ function addAsteroid() {
 function moveAsteroids() {
     for(let i=0; i < asteroids.length; i++){
         fill('white');
-        if(asteroids[i].x > width + 1000 || asteroids[i].x < -1000){
-            asteroids[i].xv *= -1;
+        if(doAsteroids){
+            if(asteroids[i].x > width + 1000 || asteroids[i].x < -1000){
+                asteroids[i].xv *= -1;
+            }
+            if(asteroids[i].y > height + 1000 || asteroids[i].y < -1000){
+                asteroids[i].yv *= -1;
+            }
+            asteroids[i].x += asteroids[i].xv;
+            asteroids[i].y += asteroids[i].yv;
+
+            asteroids[i].rotation += asteroids[i].rotationv;
+
         }
-        if(asteroids[i].y > height + 1000 || asteroids[i].y < -1000){
-            asteroids[i].yv *= -1;
-        }
-        asteroids[i].x += asteroids[i].xv;
-        asteroids[i].y += asteroids[i].yv;
-        //console.log(asteroids[i])
+        //translate(asteroids[i].x, asteroids[i].y);
+        //push();
+        //rotate(asteroids[i].rotation * (Math.PI / 180));
         image(asteroids[i].img, asteroids[i].x, asteroids[i].y, asteroids[i].imgSize, asteroids[i].imgSize);
+        //pop();
+        
+        //console.log(asteroids[i])
         //rect(asteroids[i].x, asteroids[i].y, asteroids[i].size, asteroids[i].size);
 
     }
@@ -351,6 +442,10 @@ if(asteroidToSplit.tier != 1){
     }
 }
     score += asteroidToSplit.pts;
+    if(score > 10000 * livesAdded){
+        lives++;
+        livesAdded++;
+    }
     asteroidCount--;
     asteroids.splice(asteroids.indexOf(asteroidToSplit), 1);
 
@@ -363,4 +458,47 @@ function loadScore(){
     textSize(50)
 
     text(`Score: ${score}`, 20, 40);
+}
+
+function die() {
+    hit = true;
+    doAsteroids = false;
+    player.xv = 0;
+    player.yv = 0;
+    for(let i = 0; i < 6; i++){
+        setTimeout(() => {
+            doPlayer = !doPlayer
+        }, 500*i);
+    }
+    setTimeout(() => {
+        asteroids = [];
+        playing = false;
+        doPlayer = false;
+        gameOn = false;
+    }, 4000)
+}
+
+function loseLife() {
+    hit = true;
+    doAsteroids = false;
+    lives--;
+    player.xv = 0;
+    player.yv = 0;
+    for(let i = 0; i < 6; i++){
+        setTimeout(() => {
+            doPlayer = !doPlayer;
+        }, 500*i);
+    }
+    setTimeout(() => {
+        bullets = [];
+        asteroids = [];
+        player.x = width /2;
+        player.y = height / 2;
+        player.rotation = 0;
+        doPlayer = true;
+        hit = false;
+        playing = true;
+        doAsteroids = true;
+        asteroidCount = 0;
+    }, 4000)
 }
