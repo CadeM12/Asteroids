@@ -272,7 +272,8 @@ function mousePressed() {
             size: 5,
             rotation: player.rotation,
             xv: 20*(Math.cos((player.rotation - 90)*(Math.PI / 180))),
-            yv: 20*(Math.sin((player.rotation - 90)*(Math.PI / 180)))
+            yv: 20*(Math.sin((player.rotation - 90)*(Math.PI / 180))),
+            explosionArr: []
         }
 
         bullets.push(bullet);
@@ -289,12 +290,16 @@ function moveBullet(){
         bullets[i].y += bullets[i].yv;
         if(checkCollisions(bullets[i])){
             //console.log('hit');
+            //explosion(bullets[i]);
+            //bullets[i].explosionArr = explosion(bullets[i]);
             splitAsteroid(checkCollisions(bullets[i]), bullets[i]);
+            //if(bullets[i].explosionArr){
+            //    doExplosion(bullets[i].explosionArr);
+            //}
             bullets.splice(i, 1);
         } else if(bullets[i].x > width || bullets[i].x < 0 || bullets[i].y > height || bullets[i].y < 0){
             bullets.splice(i, 1);
         }
-        
     }
 }
 
@@ -307,7 +312,7 @@ function initAsteroid(tier = Math.floor(Math.random()* 3) + 1){
         y: 0,
         xv: Math.floor(Math.random()* 7) + 1,
         yv: Math.floor(Math.random()* 7) + 1,
-        size: 150,
+        size: 120,
         imgSize: 200,
         tier: tier,
         img: largeAsteroids[Math.floor(Math.random()*7)],
@@ -317,12 +322,12 @@ function initAsteroid(tier = Math.floor(Math.random()* 3) + 1){
     }
     if(asteroid.tier == 1){
         asteroid.imgSize = 50;
-        asteroid.size = 37;
+        asteroid.size = 30;
         asteroid.pts = 200;
         asteroid.img = smallAsteroids[Math.floor(Math.random()*7)];
     } else if(asteroid.tier == 2){
         asteroid.imgSize = 100;
-        asteroid.size = 75;
+        asteroid.size = 50;
         asteroid.pts = 100;
         asteroid.img = medAsteroids[Math.floor(Math.random()*7)];
     }else{
@@ -386,11 +391,13 @@ function moveAsteroids() {
             asteroids[i].rotation += asteroids[i].rotationv;
 
         }
-        //translate(asteroids[i].x, asteroids[i].y);
+        //angleMode(DEGREES);
         //push();
-        //rotate(asteroids[i].rotation * (Math.PI / 180));
+        //translate(asteroids[i].x, asteroids[i].y);
+        //rotate(asteroids[i].rotation);
         image(asteroids[i].img, asteroids[i].x, asteroids[i].y, asteroids[i].imgSize, asteroids[i].imgSize);
         //pop();
+        //angleMode(RADIANS);
         
         //console.log(asteroids[i])
         //rect(asteroids[i].x, asteroids[i].y, asteroids[i].size, asteroids[i].size);
@@ -502,3 +509,34 @@ function loseLife() {
         asteroidCount = 0;
     }, 4000)
 }
+
+//function explosion(bullet){
+//    let pellets = [];
+//    let axis = 0;
+//    let numPellets = 12;
+//    for(let i = 0; i < numPellets; i++){
+//        let pellet = {
+//            x: bullet.x,
+//            y: bullet.y,
+//            speed: 3,
+//            rotation: axis
+//        }
+//        pellets.push(pellet);
+//        axis += 360/numPellets;
+//    }
+//    return pellets;
+//}
+
+//function doExplosion(arr){
+//    let transparency = 100;
+//    while(transparency != 0){
+//        for(let i =0; i < arr.length; i++){
+//            arr[i].x += Math.cos(arr[i].speed)*(Math.PI / 180);
+//            arr[i].y += Math.sin(arr[i].speed)*(Math.PI / 180);
+//            fill()
+//            rect(arr[i].x, arr[i].y, 20, 20);
+//        }
+//        transparency --;
+//    }
+//    
+//}
