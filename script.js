@@ -22,6 +22,9 @@ let doPlayer = true;
 let livesAdded = 1;
 let lives = 3;
 let explosionFrames;
+let listOfExplosions = [];
+let explosionSound;
+let pewSound;
 
 
 function preload() {
@@ -30,6 +33,8 @@ function preload() {
     medAsteroidSheet = loadImage("./Medium-Rocks.png");
     smallAsteroidSheet = loadImage("./Small-Rocks.png");
     explosionFrames= loadImage("./explosionGif.gif");
+    explosionSound = loadSound("./mixkit-arcade-game-explosion-2759.wav");
+    pewSound = loadSound("./ENFB7W8-bullet-swish.mp3");
 
   }
 
@@ -48,7 +53,8 @@ function setup(){
         ty2: 25,
         tx3: 0,
         ty3: -25,
-        rotation: 0
+        rotation: 0,
+        on: true
     }
 
     for(let i = 0; i < 8; i++){
@@ -139,6 +145,13 @@ function draw(){
             livesAdded = 1;
             gameOn = true;
         }
+    }
+
+    if(listOfExplosions.length > 0) {
+        for(let i = 0; i < listOfExplosions.length; i++){
+            image(explosionFrames, listOfExplosions[i][0], listOfExplosions[i][1], 50, 50);
+        }
+
     }
     //console.log(player.rotation);
 }
@@ -283,7 +296,7 @@ function mousePressed() {
             rotation: player.rotation,
             xv: 20*(Math.cos((player.rotation - 90)*(Math.PI / 180))),
             yv: 20*(Math.sin((player.rotation - 90)*(Math.PI / 180))),
-            explosionArr: []
+            on: true
         }
 
         bullets.push(bullet);
@@ -302,12 +315,12 @@ function moveBullet(){
             //console.log('hit');
             //explosion(bullets[i]);
             //bullets[i].explosionArr = explosion(bullets[i]);
-            //explosion(bullets[i]);
-            splitAsteroid(checkCollisions(bullets[i]), bullets[i]);
+            explosion(bullets[i], i);
+            //splitAsteroid(checkCollisions(bullets[i]), bullets[i]);
             //if(bullets[i].explosionArr){
             //    doExplosion(bullets[i].explosionArr);
             //}
-            bullets.splice(i, 1);
+            //bullets.splice(i, 1);
         } else if(bullets[i].x > width || bullets[i].x < 0 || bullets[i].y > height || bullets[i].y < 0){
             bullets.splice(i, 1);
         }
@@ -329,7 +342,8 @@ function initAsteroid(tier = Math.floor(Math.random()* 3) + 1){
         img: largeAsteroids[Math.floor(Math.random()*7)],
         pts: 50,
         rotationv: Math.floor(Math.random() * 7),
-        rotation: 0
+        rotation: 0,
+        on: true
     }
     if(asteroid.tier == 1){
         asteroid.imgSize = 50;
@@ -419,15 +433,17 @@ function moveAsteroids() {
 }
 
 function checkCollisions(object) {
-    for(let i = 0; i < asteroids.length; i++){
-        let xDiff = object.x-asteroids[i].x;
-        let yDiff = object.y-asteroids[i].y;
-        let dist = Math.sqrt(xDiff*xDiff + yDiff*yDiff);
-        if(dist <= asteroids[i].size){
-            return asteroids[i];
+    if(object.on){
+        for(let i = 0; i < asteroids.length; i++){
+            let xDiff = object.x-asteroids[i].x;
+            let yDiff = object.y-asteroids[i].y;
+            let dist = Math.sqrt(xDiff*xDiff + yDiff*yDiff);
+            if(dist <= asteroids[i].size){
+                return asteroids[i];
+            }
         }
+        return false;
     }
-    return false;
     
 }
 
@@ -508,6 +524,7 @@ function loseLife() {
         }, 500*i);
     }
     setTimeout(() => {
+        doPlayer = false;
         explosion(player);
     }, 3500)
     setTimeout(() => {
@@ -521,11 +538,24 @@ function loseLife() {
         playing = true;
         doAsteroids = true;
         asteroidCount = 0;
-    }, 4000)
+    }, 4100)
 }
 
-function explosion(bullet){
-    image(explosionFrames, bullet.x, bullet.y, 50, 50);
+function explosion(bullet, index = 0){
+    if(bullet != player){
+        splitAsteroid(checkCollisions(bullets[index]), bullets[index]);
+        listOfExplosions.push([bullet.x, bullet.y]);
+        bullets.splice(index, 1);
+    } else {
+        listOfExplosions.push([player.x, player.y]);
+    }
+    setTimeout(() => {
+        listOfExplosions.splice(0, 1);
+}, 400);
+
+
+
+    
 }
 
 //function doExplosion(arr){
