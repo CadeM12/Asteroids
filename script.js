@@ -2,17 +2,13 @@ let player;
 let playerSpeedVariable = 0.5;
 let frameCount = 0;
 let bullets = [];
-let largeAsteroidSheet; 
 let largeAsteroids = [];
-let medAsteroidSheet;
 let medAsteroids = [];
-let smallAsteroidSheet;
 let smallAsteroids = [];
 let difficulty = 20;
 let asteroids = [];
 let asteroidCount = 0;
 let score = 0;
-let font;
 let start = true;
 let playing = false;
 let hit = false;
@@ -21,20 +17,19 @@ let doAsteroids = true;
 let doPlayer = true;
 let livesAdded = 1;
 let lives = 3;
-let explosionFrames;
 let listOfExplosions = [];
-let explosionSound;
 let pewSound;
 
 
 function preload() {
+    //soundFormats('mp3', 'wav');
     font = loadFont('./Slim-Thirteen-Pixel-Fonts.ttf');
     largeAsteroidSheet = loadImage("./Large-Rocks.png");
     medAsteroidSheet = loadImage("./Medium-Rocks.png");
     smallAsteroidSheet = loadImage("./Small-Rocks.png");
     explosionFrames= loadImage("./explosionGif.gif");
-    explosionSound = loadSound("./mixkit-arcade-game-explosion-2759.wav");
-    pewSound = loadSound("./ENFB7W8-bullet-swish.mp3");
+    explosionSound = document.getElementById('Explosion');
+    pewSound = document.getElementById('Pew');
 
   }
 
@@ -298,7 +293,9 @@ function mousePressed() {
             yv: 20*(Math.sin((player.rotation - 90)*(Math.PI / 180))),
             on: true
         }
-
+        pewSound.pause();
+        pewSound.currentTime = 0;
+        pewSound.play();
         bullets.push(bullet);
     }
 }
@@ -542,6 +539,9 @@ function loseLife() {
 }
 
 function explosion(bullet, index = 0){
+    explosionSound.pause();
+    explosionSound.currentTime = 0;
+    explosionSound.play();
     if(bullet != player){
         splitAsteroid(checkCollisions(bullets[index]), bullets[index]);
         listOfExplosions.push([bullet.x, bullet.y]);
