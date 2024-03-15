@@ -16,11 +16,12 @@ let gameOn = true;
 let doAsteroids = true;
 let doPlayer = true;
 let livesAdded = 1;
+let powersAdded = 1;
 let lives = 3;
 let listOfExplosions = [];
 let pewSound;
 
-
+//PRELOAD
 function preload() {
     //soundFormats('mp3', 'wav');
     font = loadFont('./Slim-Thirteen-Pixel-Fonts.ttf');
@@ -34,11 +35,12 @@ function preload() {
     pewSound = document.getElementById('Pew');
 
   }
-
+//SETUP
 function setup(){
     //angleMode(DEGREES)
     imageMode(CENTER);
     createCanvas(windowWidth-20, windowHeight-20);
+    //INIT PLAYER
     player = {
         x: width / 2,
         y: height / 2,
@@ -53,7 +55,7 @@ function setup(){
         rotation: 0,
         on: true
     }
-
+    //IMAGES
     for(let i = 0; i < 8; i++){
         largeAsteroids.push(largeAsteroidSheet.get(i*1000, 0, 1000, 1000));
         medAsteroids.push(medAsteroidSheet.get(i*500, 0, 500, 500));
@@ -63,6 +65,7 @@ function setup(){
 }
 
 function drawLife(lifeNumber) {
+    //LIVES
     let rightVal = lifeNumber*60;
     fill('white')
     triangle(50 + rightVal, height - 50, 100 + rightVal, height - 50, 75 + rightVal, height - 100);
@@ -78,6 +81,8 @@ function draw(){
     frameCount++;
     let degree = player.rotation * (Math.PI / 180);
     background('black');
+
+    //START SCREEN 
     if(!playing && start){
         textFont(font);
         textSize(100);
@@ -91,10 +96,14 @@ function draw(){
             start = false;
         }
     }
+
+    //MOVE ASTEROIDS
     moveAsteroids();
     if(score > 5000){
         difficulty = 40;
     }
+
+    //PLAYING
     if(playing){
         moveBullet();
         loadScore();
@@ -108,17 +117,26 @@ function draw(){
         for(let i = 0; i<lives; i++){
             drawLife(i);
         }
+        if(score > 10000 * livesAdded){
+            lives++;
+            livesAdded++;
+        }
     }
+
+    //BULLET-ASTEROID COLLISION
     for(let i=0; i < bullets.length; i++){
         if(checkCollisions(bullets[i])){
             explosion(bullets[i]);
         }
     }
+
+    //ADD ASTEROIDS
     let rand = Math.floor(Math.random() * 25);
     if(rand == 1 && asteroidCount < difficulty){
         addAsteroid();
     };
 
+    //GAME OVER SCREEN
     if(!gameOn){
         textFont(font);
         textSize(100);
@@ -145,6 +163,7 @@ function draw(){
         }
     }
 
+    //EXPLOSION ANIMATION
     if(listOfExplosions.length > 0) {
         for(let i = 0; i < listOfExplosions.length; i++){
             image(explosionFrames, listOfExplosions[i][0], listOfExplosions[i][1], 50, 50);
@@ -243,8 +262,11 @@ function findMovement(degree) {
         player.rotation += 5;
     };
 }
+
 //MOVE PLAYER
 function movePlayer(){
+
+    //MOVE
     if(player.y > height -25 || player.y < 25){
         if(player.yv < 0){
             player.yv -= 1;
@@ -263,6 +285,8 @@ function movePlayer(){
     };
     player.x += player.xv;
     player.y += player.yv;
+
+    //BOUNCE
     if(!keyIsDown() && (player.yv != 0 || player.xv != 0)){
         if(player.yv > 0){
             player.yv -= 0.25;
@@ -276,6 +300,7 @@ function movePlayer(){
         };
     };
 
+    //PLAYER_ASTEROID COLLISIONS
     if(checkCollisions(player) && !hit){
         if(lives == 0){
             die();
@@ -284,9 +309,12 @@ function movePlayer(){
         }
     }
 }
+
 //CREATE BULLET
 function mousePressed() {
     if(playing && doAsteroids){
+
+        //CREATE BULLET
         let bullet = {
             x: player.x,
             y: player.y,
@@ -296,6 +324,7 @@ function mousePressed() {
             yv: 20*(Math.sin((player.rotation - 90)*(Math.PI / 180))),
             on: true
         } 
+        //PEW SOUND
         pewSound.pause();
         pewSound.currentTime = 0;
         pewSound.play();
@@ -303,8 +332,7 @@ function mousePressed() {
     }
 }
 
-//Move Bullet
-
+//MOVE BULLET
 function moveBullet(){
     for(let i=0; i < bullets.length; i++){
         fill('white');
@@ -327,8 +355,7 @@ function moveBullet(){
     }
 }
 
-//Create Asteroid
-
+//CREATE ASTEROID
 function initAsteroid(tier = Math.floor(Math.random()* 3) + 1){
     asteroidCount++;
     let asteroid = {
@@ -361,6 +388,7 @@ function initAsteroid(tier = Math.floor(Math.random()* 3) + 1){
     return asteroid;
 }
 
+//ADD ASTEROID
 function addAsteroid() {
     let asteroid = initAsteroid();
     let asteroidHorizontal = Math.floor(Math.random() * width);
@@ -398,8 +426,7 @@ function addAsteroid() {
 
 }
 
-//Move Asteroids
-
+//MOVE ASTEROIDS
 function moveAsteroids() {
     for(let i=0; i < asteroids.length; i++){
         fill('white');
@@ -432,6 +459,8 @@ function moveAsteroids() {
     
 }
 
+
+//CHECK COLLISIONS
 function checkCollisions(object) {
     if(object.on){
         for(let i = 0; i < asteroids.length; i++){
@@ -446,7 +475,7 @@ function checkCollisions(object) {
     }
     
 }
-
+//SPLIT ASTEROIDS
 function splitAsteroid(asteroidToSplit, bullet){
     
 if(asteroidToSplit.tier != 1){
@@ -485,7 +514,7 @@ if(asteroidToSplit.tier != 1){
 
 }
 
-
+//LOAD SCORE
 function loadScore(){
     fill('white');
     textFont(font);
@@ -494,6 +523,7 @@ function loadScore(){
     text(`Score: ${score}`, 20, 40);
 }
 
+//DEATH
 function die() {
     hit = true;
     doAsteroids = false;
@@ -512,6 +542,7 @@ function die() {
     }, 4000)
 }
 
+//LOSE LIFE
 function loseLife() {
     hit = true;
     doAsteroids = false;
@@ -541,6 +572,7 @@ function loseLife() {
     }, 4100)
 }
 
+//EXPLOSIONS
 function explosion(bullet, index = 0){
     explosionSound.pause();
     explosionSound.currentTime = 0;
