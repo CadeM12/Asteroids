@@ -33,8 +33,8 @@ function preload() {
     medAsteroidSheet = loadImage("./Medium-Rocks.png");
     smallAsteroidSheet = loadImage("./Small-Rocks.png");
     explosionFrames= loadImage("./explosionGif.gif");
-    explosionSound = loadSound("./mixkit-arcade-game-explosion-2759.wav");
-    pewSound = loadSound("./ENFB7W8-bullet-swish.mp3");
+    explosionSound = document.getElementById('Explosion');
+    pewSound = document.getElementById('Pew');
 
   }
 
@@ -87,7 +87,8 @@ function draw(){
         fill('white');
         text('ASTEROIDS', width/2 - 275, height/2 - 50);
         textSize(30);
-        text('Press SPACE to start', width/2 -125, height/2);
+        text('By Cade McNelly', width/2 -105, height/2);
+        text('Press SPACE to start', width/2 -125, height/2 + 100);
         if(keyIsDown(32)){
             playing = true;
             start = false;
@@ -297,8 +298,10 @@ function mousePressed() {
             xv: 20*(Math.cos((player.rotation - 90)*(Math.PI / 180))),
             yv: 20*(Math.sin((player.rotation - 90)*(Math.PI / 180))),
             on: true
-        }
-
+        } 
+        pewSound.pause();
+        pewSound.currentTime = 0;
+        pewSound.play();
         bullets.push(bullet);
     }
 }
@@ -551,9 +554,11 @@ function explosion(bullet, index = 0){
     }
     setTimeout(() => {
         listOfExplosions.splice(0, 1);
-}, 400);
+}, 350);
 
-
+explosionSound.pause();
+explosionSound.currentTime = 0;
+explosionSound.play();
 
     
 }
