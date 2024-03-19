@@ -20,6 +20,7 @@ let powersAdded = 1;
 let lives = 3;
 let listOfExplosions = [];
 let pewSound;
+let powers = [];
 
 //PRELOAD
 function preload() {
@@ -33,6 +34,9 @@ function preload() {
     pewSound = document.getElementById('Pew');
     explosionSound = document.getElementById('Explosion');
     pewSound = document.getElementById('Pew');
+    tripleShotIcon = loadImage("./Triple Shot.png");
+    shieldIcon = loadImage("./Shield.png");
+    nukeIcon = loadImage("./Radioactive.png");
 
   }
 //SETUP
@@ -99,6 +103,7 @@ function draw(){
 
     //MOVE ASTEROIDS
     moveAsteroids();
+    movePowers();
     if(score > 5000){
         difficulty = 40;
     }
@@ -135,6 +140,11 @@ function draw(){
     if(rand == 1 && asteroidCount < difficulty){
         addAsteroid();
     };
+
+    rand = Math.floor(Math.random() * 1000);
+    if(rand == 1){
+        addPower();
+    }
 
     //GAME OVER SCREEN
     if(!gameOn){
@@ -593,7 +603,72 @@ explosionSound.currentTime = 0;
 explosionSound.play();
 
     
-}
+};
+
+function addPower() {
+    console.log('made');
+    let power = {
+        x: 100,
+        y: 100,
+        xv: 5,
+        yv: 5,
+        powerNum: Math.floor(Math.random()*3)
+
+    }
+    let powerHorizontal = Math.floor(Math.random() * width);
+    let powerVertical = Math.floor(Math.random() * 2) + 1;
+    if(powerVertical == 1) {
+        power.x = powerHorizontal;
+        power.y = -500;
+        if(Math.floor(Math.random()*2) == 1){
+            power.xv *= -1;
+        }
+    } else if(powerVertical == 2) {
+        power.y = Math.floor(Math.random() * height);
+        let side = Math.floor(Math.random() * 2);
+        if(side == 1){
+            power.x = -500;
+        } else {
+            power.x = width + 500;
+            power.xv *= -1;
+        }
+        if(Math.floor(Math.random()*2) == 1){
+            power.yv *= -1;
+        }
+    } else if(powerVertical ==3 ) {
+        power.x = powerHorizontal;
+        power.y = height + 500;
+        if(Math.floor(Math.random()*2) == 1){
+            power.yv *= -1;
+        }
+    }
+   // console.log(powerHorizontal + ', ' + powerVertical);
+
+    powers.push(power);
+    
+};
+
+function movePowers() {
+    for(let i =0; i < powers.length; i++){
+        if(powers[i].x > width + 500 || powers[i].x < -500){
+            powers[i].xv *= -1;
+        }
+        if(powers[i].y > height + 500 || powers[i].y < -500){
+            powers[i].yv *= -1;
+        }
+        if(doAsteroids){
+            powers[i].x += powers[i].xv;
+            powers[i].y += powers[i].yv;
+        } 
+        if(powers[i].powerNum == 0){
+            image(nukeIcon, powers[i].x, powers[i].y, 75, 75);
+        }else if(powers[i].powerNum == 1){
+            image(shieldIcon, powers[i].x, powers[i].y, 75, 75);
+        }else{
+            image(tripleShotIcon, powers[i].x, powers[i].y, 75, 75);
+        };
+    }
+};
 
 //function doExplosion(arr){
 //    let transparency = 100;
