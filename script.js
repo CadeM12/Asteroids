@@ -57,7 +57,8 @@ function setup(){
         tx3: 0,
         ty3: -25,
         rotation: 0,
-        on: true
+        on: true,
+        power: null
     }
     //IMAGES
     for(let i = 0; i < 8; i++){
@@ -118,6 +119,7 @@ function draw(){
             }
             movePlayer();
             updatePlayer(degree);
+            shield();
         }
         for(let i = 0; i<lives; i++){
             drawLife(i);
@@ -141,7 +143,7 @@ function draw(){
         addAsteroid();
     };
 
-    rand = Math.floor(Math.random() * 1000);
+    rand = Math.floor(Math.random() * 100);
     if(rand == 1){
         addPower();
     }
@@ -334,6 +336,28 @@ function mousePressed() {
             yv: 20*(Math.sin((player.rotation - 90)*(Math.PI / 180))),
             on: true
         } 
+        if(player.power == 2){
+            let bullet2 = {
+                x: player.x,
+                y: player.y,
+                size: 5,
+                rotation: player.rotation - 30,
+                xv: 20*(Math.cos((player.rotation - 120)*(Math.PI / 180))),
+                yv: 20*(Math.sin((player.rotation - 120)*(Math.PI / 180))),
+                on: true
+            } 
+            bullets.push(bullet2);
+            let bullet3 = {
+                x: player.x,
+                y: player.y,
+                size: 5,
+                rotation: player.rotation + 30,
+                xv: 20*(Math.cos((player.rotation - 60)*(Math.PI / 180))),
+                yv: 20*(Math.sin((player.rotation - 60)*(Math.PI / 180))),
+                on: true
+            } 
+            bullets.push(bullet3);
+        }
         //PEW SOUND
         pewSound.pause();
         pewSound.currentTime = 0;
@@ -481,6 +505,14 @@ function checkCollisions(object) {
                 return asteroids[i];
             }
         }
+        for(let i = 0; i < powers.length; i++){
+            let xDiff = object.x-powers[i].x;
+            let yDiff = object.y-powers[i].y;
+            let dist = Math.sqrt(xDiff*xDiff + yDiff*yDiff);
+            if(dist <= 75/2){
+                return powers[i];
+            }
+        }
         return false;
     }
     
@@ -489,31 +521,31 @@ function checkCollisions(object) {
 function splitAsteroid(asteroidToSplit, bullet){
     
 if(asteroidToSplit.tier != 1){
-    let splitAsteroid1 = initAsteroid(asteroidToSplit.tier - 1);
-    splitAsteroid1.x = asteroidToSplit.x;
-    splitAsteroid1.y = asteroidToSplit.y;
-    
-    let splitAsteroid2 = initAsteroid(asteroidToSplit.tier - 1);
-    splitAsteroid2.x = asteroidToSplit.x;
-    splitAsteroid2.y = asteroidToSplit.y;
-    
-    asteroids.push(splitAsteroid1);
-    asteroids.push(splitAsteroid2);
-    if(bullet.xv < 0){
-        splitAsteroid1.xv = -Math.abs(splitAsteroid1.xv);
-        splitAsteroid2.xv = -Math.abs(splitAsteroid2.xv);
-    } else {
-        splitAsteroid1.xv = Math.abs(splitAsteroid1.xv);
-        splitAsteroid2.xv = Math.abs(splitAsteroid2.xv);
+        let splitAsteroid1 = initAsteroid(asteroidToSplit.tier - 1);
+        splitAsteroid1.x = asteroidToSplit.x;
+        splitAsteroid1.y = asteroidToSplit.y;
+
+        let splitAsteroid2 = initAsteroid(asteroidToSplit.tier - 1);
+        splitAsteroid2.x = asteroidToSplit.x;
+        splitAsteroid2.y = asteroidToSplit.y;
+
+        asteroids.push(splitAsteroid1);
+        asteroids.push(splitAsteroid2);
+        if(bullet.xv < 0){
+            splitAsteroid1.xv = -Math.abs(splitAsteroid1.xv);
+            splitAsteroid2.xv = -Math.abs(splitAsteroid2.xv);
+        } else {
+            splitAsteroid1.xv = Math.abs(splitAsteroid1.xv);
+            splitAsteroid2.xv = Math.abs(splitAsteroid2.xv);
+        }
+        if(bullet.yv < 0){
+            splitAsteroid1.yv = -Math.abs(splitAsteroid1.yv);
+            splitAsteroid2.yv = -Math.abs(splitAsteroid2.yv);
+        } else {
+            splitAsteroid1.yv = Math.abs(splitAsteroid1.yv);
+            splitAsteroid2.yv = Math.abs(splitAsteroid2.yv);
+        }
     }
-    if(bullet.yv < 0){
-        splitAsteroid1.yv = -Math.abs(splitAsteroid1.yv);
-        splitAsteroid2.yv = -Math.abs(splitAsteroid2.yv);
-    } else {
-        splitAsteroid1.yv = Math.abs(splitAsteroid1.yv);
-        splitAsteroid2.yv = Math.abs(splitAsteroid2.yv);
-    }
-}
     score += asteroidToSplit.pts;
     if(score > 10000 * livesAdded){
         lives++;
@@ -588,9 +620,14 @@ function explosion(bullet, index = 0){
     explosionSound.currentTime = 0;
     explosionSound.play();
     if(bullet != player){
-        splitAsteroid(checkCollisions(bullets[index]), bullets[index]);
+        if(asteroids.includes(checkCollisions(bullets[index]))){
+            splitAsteroid(checkCollisions(bullets[index]), bullets[index]);
+        } else {
+            getPower(checkCollisions(bullets[index]), bullets[index]);
+        };
         listOfExplosions.push([bullet.x, bullet.y]);
         bullets.splice(index, 1);
+        
     } else {
         listOfExplosions.push([player.x, player.y]);
     }
@@ -670,15 +707,54 @@ function movePowers() {
     }
 };
 
+function shield(){
+    if(player.powerNum == 1){
+        
+    };
+};
+
+function nuke() {
+    for(let n = 0; n < 3; n++){
+        setTimeout(() => {
+            explosionSound.pause();
+            explosionSound.currentTime = 0;
+            explosionSound.play();
+            for(let i =0; i < asteroids.length; i++){
+                splitAsteroid(asteroids[i], i);
+                listOfExplosions.push([asteroids[i].x, asteroids[i].y]);
+                setTimeout(() => {
+                    listOfExplosions.splice(0, 1);
+                }, 350);
+            }
+        }, 1000*n)
+
+    }
+
+};
+
+function getPower(power, bullet) {
+    if(player.powerNum != 0){
+        player.power = power.powerNum;
+        setTimeout(() => {
+            player.power = null;
+        }, 5000); 
+    };
+    if(power.powerNum == 0){
+        nuke();
+    }
+    
+    powers.splice(powers.indexOf(power), 1);
+}
+
 //function doExplosion(arr){
-//    let transparency = 100;
-//    while(transparency != 0){
-//        for(let i =0; i < arr.length; i++){
-//            arr[i].x += Math.cos(arr[i].speed)*(Math.PI / 180);
-//            arr[i].y += Math.sin(arr[i].speed)*(Math.PI / 180);
-//            fill()
-//            rect(arr[i].x, arr[i].y, 20, 20);
-//        }
+    //    let transparency = 100;
+    //    while(transparency != 0){
+        //        for(let i =0; i < arr.length; i++){
+            //            arr[i].x += Math.cos(arr[i].speed)*(Math.PI / 180);
+            //            arr[i].y += Math.sin(arr[i].speed)*(Math.PI / 180);
+            //            fill()
+            //            rect(arr[i].x, arr[i].y, 20, 20);
+            //        }
 //        transparency --;
 //    }
 //    
