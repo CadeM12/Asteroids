@@ -18,6 +18,7 @@ let doPlayer = true;
 let livesAdded = 1;
 let powersAdded = 1;
 let lives = 3;
+let listOfNukes = [];
 let listOfExplosions = [];
 let pewSound;
 let powers = [];
@@ -37,6 +38,7 @@ function preload() {
     tripleShotIcon = loadImage("./Triple Shot.png");
     shieldIcon = loadImage("./Shield.png");
     nukeIcon = loadImage("./Radioactive.png");
+    autoIcon = loadImage('./Auto.png');
 
   }
 //SETUP
@@ -58,7 +60,7 @@ function setup(){
         ty3: -25,
         rotation: 0,
         on: true,
-        power: null
+        power: []
     }
     //IMAGES
     for(let i = 0; i < 8; i++){
@@ -80,13 +82,13 @@ function drawLife(lifeNumber) {
     triangle(50 + rightVal, height - 50, 100 + rightVal, height - 50, 75 + rightVal, height - 70);
     fill('black');
     triangle(45 + rightVal, height - 40, 105 + rightVal, height - 40, 75 + rightVal, height - 63);
-}
-
-function draw(){
-    frameCount++;
-    let degree = player.rotation * (Math.PI / 180);
+    }
+    
+    function draw(){
+        frameCount++;
+        let degree = player.rotation * (Math.PI / 180);
     background('black');
-
+    
     //START SCREEN 
     if(!playing && start){
         textFont(font);
@@ -101,7 +103,21 @@ function draw(){
             start = false;
         }
     }
-
+    //NUKE
+    if(listOfNukes.length > 0){
+        for(let n = 0; n < listOfNukes.length; n++){
+            fill('yellow');
+            circle(listOfNukes[n][0], listOfNukes[n][1], listOfNukes[n][2]);
+            fill('black');
+            circle(listOfNukes[n][0], listOfNukes[n][1], listOfNukes[n][2]-20);
+            fill('white');
+            listOfNukes[n][2] += 150;
+            if(listOfNukes[n][2] >= width*2){
+                listOfNukes.splice(0, 1);
+            }
+        }
+    
+    }
     //MOVE ASTEROIDS
     moveAsteroids();
     movePowers();
@@ -111,15 +127,19 @@ function draw(){
 
     //PLAYING
     if(playing){
+        if(mouseIsPressed && player.power.includes(3)){
+            createBullet();
+        }
         moveBullet();
         loadScore();
         if(doPlayer){
             if(!hit){
                 findMovement(degree);
             }
+            shield();
             movePlayer();
             updatePlayer(degree);
-            shield();
+            
         }
         for(let i = 0; i<lives; i++){
             drawLife(i);
@@ -143,9 +163,11 @@ function draw(){
         addAsteroid();
     };
 
-    rand = Math.floor(Math.random() * 100);
+    rand = Math.floor(Math.random() * 500);
     if(rand == 1){
-        addPower();
+        if(powers.length < 3){
+           addPower(); 
+        } 
     }
 
     //GAME OVER SCREEN
@@ -162,6 +184,7 @@ function draw(){
             score = 0;
             bullets = [];
             asteroids = [];
+            powers = [];
             player.x = width /2;
             player.y = height / 2;
             player.rotation = 0;
@@ -234,7 +257,7 @@ function updatePlayer(degree) {
 function findMovement(degree) {
     //PLAYER MOVEMENT
     //W
-    if(keyIsDown(87) && player.yv > playerSpeedVariable*-20){
+    if((keyIsDown(87) || keyIsDown(38) || keyIsDown(32)) && player.yv > playerSpeedVariable*-20){
         if(player.rotation < 90 || player.rotation > 270){
             player.yv -= playerSpeedVariable * (Math.cos(degree));
         } else {
@@ -247,7 +270,7 @@ function findMovement(degree) {
         };
     };
     //S
-    if(keyIsDown(83) && player.yv < playerSpeedVariable*10){
+    if((keyIsDown(83) || keyIsDown(40)) && player.yv < playerSpeedVariable*10){
         if(player.rotation < 90 || player.rotation > 270){
             player.yv +=playerSpeedVariable * (Math.cos(degree));
         } else {
@@ -260,14 +283,14 @@ function findMovement(degree) {
         };
     };
     //A
-    if(keyIsDown(65)){
+    if(keyIsDown(65) || keyIsDown(37)){
         if(player.rotation == 0){
             player.rotation = 360;
         };
         player.rotation -= 5;
     };
     //D
-    if(keyIsDown(68)){
+    if(keyIsDown(68) || keyIsDown(39)){
         if(player.rotation == 360){
             player.rotation = 0;
         };
@@ -314,16 +337,25 @@ function movePlayer(){
 
     //PLAYER_ASTEROID COLLISIONS
     if(checkCollisions(player) && !hit){
-        if(lives == 0){
-            die();
+        if(!powers.includes(checkCollisions(player))){
+            if(lives == 0){
+                die();
+            } else {
+                loseLife();
+            }
         } else {
-            loseLife();
+            getPower(checkCollisions(player), player);
         }
+        
     }
 }
 
 //CREATE BULLET
 function mousePressed() {
+    createBullet();
+}
+
+function createBullet(){
     if(playing && doAsteroids){
 
         //CREATE BULLET
@@ -334,9 +366,10 @@ function mousePressed() {
             rotation: player.rotation,
             xv: 20*(Math.cos((player.rotation - 90)*(Math.PI / 180))),
             yv: 20*(Math.sin((player.rotation - 90)*(Math.PI / 180))),
-            on: true
+            on: true,
+            color: 'white'
         } 
-        if(player.power == 2){
+        if(player.power.includes(2)){
             let bullet2 = {
                 x: player.x,
                 y: player.y,
@@ -344,7 +377,8 @@ function mousePressed() {
                 rotation: player.rotation - 30,
                 xv: 20*(Math.cos((player.rotation - 120)*(Math.PI / 180))),
                 yv: 20*(Math.sin((player.rotation - 120)*(Math.PI / 180))),
-                on: true
+                on: true,
+                color: 'red'
             } 
             bullets.push(bullet2);
             let bullet3 = {
@@ -354,7 +388,8 @@ function mousePressed() {
                 rotation: player.rotation + 30,
                 xv: 20*(Math.cos((player.rotation - 60)*(Math.PI / 180))),
                 yv: 20*(Math.sin((player.rotation - 60)*(Math.PI / 180))),
-                on: true
+                on: true,
+                color: 'red'
             } 
             bullets.push(bullet3);
         }
@@ -363,13 +398,12 @@ function mousePressed() {
         pewSound.currentTime = 0;
         pewSound.play();
         bullets.push(bullet);
-    }
-}
-
+    };
+};
 //MOVE BULLET
 function moveBullet(){
     for(let i=0; i < bullets.length; i++){
-        fill('white');
+        fill(bullets[i].color);
         rect(bullets[i].x, bullets[i].y, bullets[i].size, bullets[i].size);
         bullets[i].x += bullets[i].xv;
         bullets[i].y += bullets[i].yv;
@@ -501,7 +535,24 @@ function checkCollisions(object) {
             let xDiff = object.x-asteroids[i].x;
             let yDiff = object.y-asteroids[i].y;
             let dist = Math.sqrt(xDiff*xDiff + yDiff*yDiff);
+            if(player.power.includes(1) && object == player){
+                dist -= 75;
+            }
+            
             if(dist <= asteroids[i].size){
+                if(player.power.includes(1) && object == player){
+                    score += asteroids[i].pts;
+                    explosionSound.pause();
+                    explosionSound.currentTime = 0;
+                    explosionSound.play();
+                    listOfExplosions.push([asteroids[i].x, asteroids[i].y]);
+                    setTimeout(() => {
+                        listOfExplosions.splice(0, 1);
+                    }, 350);
+                    asteroids.splice(asteroids.indexOf(asteroids[i]), 1);
+                    asteroidCount--;
+                    return false;
+                }
                 return asteroids[i];
             }
         }
@@ -509,6 +560,9 @@ function checkCollisions(object) {
             let xDiff = object.x-powers[i].x;
             let yDiff = object.y-powers[i].y;
             let dist = Math.sqrt(xDiff*xDiff + yDiff*yDiff);
+            if(player.power.includes(1) && object == player){
+                dist -= 75;
+            }
             if(dist <= 75/2){
                 return powers[i];
             }
@@ -603,6 +657,7 @@ function loseLife() {
     setTimeout(() => {
         bullets = [];
         asteroids = [];
+        powers = [];
         player.x = width /2;
         player.y = height / 2;
         player.rotation = 0;
@@ -633,7 +688,7 @@ function explosion(bullet, index = 0){
     }
     setTimeout(() => {
         listOfExplosions.splice(0, 1);
-}, 350);
+    }, 350);
 
 explosionSound.pause();
 explosionSound.currentTime = 0;
@@ -643,13 +698,13 @@ explosionSound.play();
 };
 
 function addPower() {
-    console.log('made');
+    //console.log('made');
     let power = {
         x: 100,
         y: 100,
         xv: 5,
         yv: 5,
-        powerNum: Math.floor(Math.random()*3)
+        powerNum: Math.floor(Math.random()*4)
 
     }
     let powerHorizontal = Math.floor(Math.random() * width);
@@ -701,46 +756,58 @@ function movePowers() {
             image(nukeIcon, powers[i].x, powers[i].y, 75, 75);
         }else if(powers[i].powerNum == 1){
             image(shieldIcon, powers[i].x, powers[i].y, 75, 75);
-        }else{
+        }else if(powers[i].powerNum == 2){
             image(tripleShotIcon, powers[i].x, powers[i].y, 75, 75);
+        } else {
+            image(autoIcon, powers[i].x, powers[i].y, 75, 75);
         };
     }
 };
 
 function shield(){
-    if(player.powerNum == 1){
-        
+    if(player.power.includes(1)){
+        //console.log('shield');
+        fill('blue');
+        circle(player.x, player.y, 150);
+        fill('black');
+        circle(player.x, player.y, 130);
+        fill('white');
     };
 };
 
-function nuke() {
-    for(let n = 0; n < 3; n++){
-        setTimeout(() => {
-            explosionSound.pause();
-            explosionSound.currentTime = 0;
-            explosionSound.play();
-            for(let i =0; i < asteroids.length; i++){
-                splitAsteroid(asteroids[i], i);
-                listOfExplosions.push([asteroids[i].x, asteroids[i].y]);
-                setTimeout(() => {
-                    listOfExplosions.splice(0, 1);
-                }, 350);
-            }
-        }, 1000*n)
-
-    }
-
+function nuke(power) {
+    for(let i =0; i < asteroids.length; i++){
+        //console.log(asteroids);  
+        listOfNukes.push([power.x, power.y, 30]);
+        listOfExplosions.push([asteroids[i].x, asteroids[i].y]);            
+        score += asteroids[i].pts; 
+        explosionSound.pause();
+        explosionSound.currentTime = 0;
+        explosionSound.play();
+        setTimeout(() => { 
+            listOfExplosions.splice(0, 1);
+        }, 350);
+    }  
+    asteroidCount = 0;
+    asteroids = [];
 };
 
-function getPower(power, bullet) {
+function getPower(power) {
     if(player.powerNum != 0){
-        player.power = power.powerNum;
-        setTimeout(() => {
-            player.power = null;
-        }, 5000); 
+        player.power.push(power.powerNum);
+        if(power.powerNum != 3) {
+            setTimeout(() => {
+                player.power.splice(player.power.indexOf(power.powerNum), 1);
+            }, 10000);
+        } else {
+            setTimeout(() => {
+                player.power.splice(player.power.indexOf(power.powerNum), 1);
+            }, 3000);
+        }
+         
     };
     if(power.powerNum == 0){
-        nuke();
+        nuke(power);
     }
     
     powers.splice(powers.indexOf(power), 1);
